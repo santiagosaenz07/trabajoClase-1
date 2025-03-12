@@ -1,0 +1,52 @@
+let mapa;
+
+window.addEventListener("load", function () {
+    mapa = new ol.Map({
+        target: 'map',
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM(),
+            }),
+        ],
+        view: new ol.View({
+            center: ol.proj.transform([-72.265911, 3.7644111], 'EPSG:4326', 'EPSG:3857'),
+            zoom: 5,
+        }),
+    });
+
+    mapa.on('click', function (evt) {
+        let coordinates = ol.proj.transform(evt.coordinate, 'EPSG:3857', 'EPSG:4326');
+        let latitud = coordinates[1].toFixed(6);
+        let longitud = coordinates[0].toFixed(6);
+        console.log("Latitud:", latitud);
+        console.log("Longitud:", longitud);
+        
+        // Realizar la petición para obtener los datos de temperatura y humedad
+        let url = `https://api.open-meteo.com/v1/forecast?latitude=${latitud}&longitude=${longitud}&current_weather=true&hourly=relative_humidity_2m`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.current_weather) {
+                    let temp = data.current_weather.temperature;
+                    let humedad = data.hourly?.relative_humidity_2m ? data.hourly.relative_humidity_2m[0] : 'N/A';
+                    actualizarUI(latitud, longitud, temp, humedad);
+                } else {
+                    alert("No se pudo obtener el clima para esta ubicación.");
+                }
+            })
+            .catch(error => console.error("Error obteniendo el clima:", error));
+    });
+});
+
+function actualizarUI(lat, lon, temp, humedad) {
+    document.getElementById("latitud_dato").textContent = lat;
+    document.getElementById("longitud_dato").textContent = lon;
+    document.getElementById("temperatura_dato").textContent = temp + " °C";
+    document.getElementById("humedad_dato").textContent = humedad + " %";
+    actualizarHistorial(lat, lon, temp, humedad);
+}
+
+function actualizarHistorial(lat, lon, temp, humedad) {
+    let tablaHistorial = document.querySelector("#tabla_historial");
+    le
